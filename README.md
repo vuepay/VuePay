@@ -1,2 +1,4 @@
-# docs
-Public docs: White Paper, Technical Paper will go here.
+# VuePay
+Decentralized platform to deliver Ad revenue share using Ethereum
+
+**WIP**
