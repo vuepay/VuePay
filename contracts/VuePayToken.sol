@@ -13,7 +13,7 @@ contract Ownable {
    * @dev The Ownable constructor sets the original `owner` of the contract to the sender
    * account.
    */
-  function Ownable() {
+  function Ownable() public {
     owner = msg.sender;
   }
 
@@ -31,7 +31,7 @@ contract Ownable {
    * @dev Allows the current owner to transfer control of the contract to a newOwner.
    * @param newOwner The address to transfer ownership to.
    */
-  function transferOwnership(address newOwner) onlyOwner {
+  function transferOwnership(address newOwner) public onlyOwner {
     if (newOwner != address(0)) {
       owner = newOwner;
     }
@@ -45,25 +45,25 @@ contract Ownable {
  * @dev Math operations with safety checks that throw on error
  */
 library SafeMath {
-  function mul(uint256 a, uint256 b) internal constant returns (uint256) {
+  function mul(uint256 a, uint256 b) internal returns (uint256) {
     uint256 c = a * b;
     assert(a == 0 || c / a == b);
     return c;
   }
 
-  function div(uint256 a, uint256 b) internal constant returns (uint256) {
+  function div(uint256 a, uint256 b) internal returns (uint256) {
     // assert(b > 0); // Solidity automatically throws when dividing by 0
     uint256 c = a / b;
     // assert(a == b * c + a % b); // There is no case in which this doesn't hold
     return c;
   }
 
-  function sub(uint256 a, uint256 b) internal constant returns (uint256) {
+  function sub(uint256 a, uint256 b) internal returns (uint256) {
     assert(b <= a);
     return a - b;
   }
 
-  function add(uint256 a, uint256 b) internal constant returns (uint256) {
+  function add(uint256 a, uint256 b) internal returns (uint256) {
     uint256 c = a + b;
     assert(c >= a);
     return c;
@@ -76,8 +76,8 @@ library SafeMath {
  */
 contract ERC20Basic {
   uint256 public totalSupply;
-  function balanceOf(address who) constant returns (uint256);
-  function transfer(address to, uint256 value) returns (bool);
+  function balanceOf(address who) public constant returns (uint256);
+  function transfer(address to, uint256 value) public returns (bool);
   event Transfer(address indexed from, address indexed to, uint256 value);
 }
 
@@ -86,9 +86,9 @@ contract ERC20Basic {
  * @dev see https://github.com/ethereum/EIPs/issues/20
  */
 contract ERC20 is ERC20Basic {
-  function allowance(address owner, address spender) constant returns (uint256);
-  function transferFrom(address from, address to, uint256 value) returns (bool);
-  function approve(address spender, uint256 value) returns (bool);
+  function allowance(address owner, address spender) public constant returns (uint256);
+  function transferFrom(address from, address to, uint256 value) public returns (bool);
+  function approve(address spender, uint256 value) public returns (bool);
   event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
@@ -107,7 +107,7 @@ contract BasicToken is ERC20Basic {
   * @param _to The address to transfer to.
   * @param _value The amount to be transferred.
   */
-  function transfer(address _to, uint256 _value) returns (bool) {
+  function transfer(address _to, uint256 _value) public returns (bool) {
     balances[msg.sender] = balances[msg.sender].sub(_value);
     balances[_to] = balances[_to].add(_value);
     Transfer(msg.sender, _to, _value);
@@ -119,7 +119,7 @@ contract BasicToken is ERC20Basic {
   * @param _owner The address to query the the balance of. 
   * @return An uint256 representing the amount owned by the passed address.
   */
-  function balanceOf(address _owner) constant returns (uint256 balance) {
+  function balanceOf(address _owner) public constant returns (uint256 balance) {
     return balances[_owner];
   }
 
@@ -146,7 +146,7 @@ contract StandardToken is ERC20, BasicToken {
    * @param _to address The address which you want to transfer to
    * @param _value uint256 the amout of tokens to be transfered
    */
-  function transferFrom(address _from, address _to, uint256 _value) returns (bool) {
+  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
     var _allowance = allowed[_from][msg.sender];
 
     // Check is not needed because sub(_allowance, _value) will already throw if this condition is not met
@@ -164,7 +164,7 @@ contract StandardToken is ERC20, BasicToken {
    * @param _spender The address which will spend the funds.
    * @param _value The amount of tokens to be spent.
    */
-  function approve(address _spender, uint256 _value) returns (bool) {
+  function approve(address _spender, uint256 _value) public returns (bool) {
 
     // To change the approve amount you first have to reduce the addresses`
     //  allowance to zero by calling `approve(_spender, 0)` if it is not
@@ -183,12 +183,11 @@ contract StandardToken is ERC20, BasicToken {
    * @param _spender address The address which will spend the funds.
    * @return A uint256 specifing the amount of tokens still avaible for the spender.
    */
-  function allowance(address _owner, address _spender) constant returns (uint256 remaining) {
+  function allowance(address _owner, address _spender) public constant returns (uint256 remaining) {
     return allowed[_owner][_spender];
   }
 
 }
-
 
 contract VuePayToken is StandardToken, Ownable {
 	using SafeMath for uint256;
@@ -229,6 +228,8 @@ contract VuePayToken is StandardToken, Ownable {
     uint public unsoldUnlockedAt;
     uint256 coreTeamShare;
     uint256 cofounderShare;
+    uint256 advisoryTeamShare;
+    
 	// Calculate the VUP to ETH rate for the current time period of the sale
 	uint256 curTokenRate = VUP_PER_ETH_BASE_RATE;
 	uint256 public constant INITIAL_VUP_TOKEN_SUPPLY =1000000000e18;
@@ -254,7 +255,7 @@ contract VuePayToken is StandardToken, Ownable {
 	uint256 public constant VUP_PER_ETH_ICO_TIER2_RATE = 2500; // 2500 VUP @ 25% discount
 	uint256 public constant VUP_PER_ETH_ICO_TIER3_RATE = 2250;// 2250 VUP @ 12.5% discount
 	
-	function VuePayToken(
+	function VuePayToken (
 	    uint256 _preSaleStartBlock,
 		address _vuePayETHDestination,
 		address _devVUPDestination,
@@ -263,7 +264,7 @@ contract VuePayToken is StandardToken, Ownable {
 		address _cofounderVUPDestination,
 		address _udfVUPDestination,
 		address _unsoldVUPDestination
-    ) 
+    ) public
 	{
 	   
 	    totalSupply = INITIAL_VUP_TOKEN_SUPPLY;
@@ -299,12 +300,13 @@ contract VuePayToken is StandardToken, Ownable {
 		cofounderVUPDestination = _cofounderVUPDestination;
 		udfVUPDestination = _udfVUPDestination;
 		unsoldVUPDestination=_unsoldVUPDestination;
+		advisoryTeamShare = ADVISORY_TEAM_PORTION;
 		totalETHRaised = 0;
 		totalVUP=0;
 
 	}
 
-	function () payable {
+	function () public payable {
 		
 		//minimum .05 Ether required.
 		require(msg.value >= .05 ether);
@@ -351,6 +353,7 @@ contract VuePayToken is StandardToken, Ownable {
 
 		CreatedVUP(msg.sender, amountOfVUP);
 	}
+	
 	function getCurrentVUPRate() private{
 	        //default to the base rate
 	        curTokenRate = VUP_PER_ETH_BASE_RATE;
@@ -377,11 +380,29 @@ contract VuePayToken is StandardToken, Ownable {
 		        curTokenRate = VUP_PER_ETH_BASE_RATE;
 		    }
 	}
+    // Create VUP tokens from the Advisory bucket for marketing, PR, Media where we are 
+    //paying upfront for these activities in VUP tokens.
+    //Clients = Media, PR, Marketing promotion etc.
+    function createCustomVUP(address _clientVUPAddress,uint256 _value) public onlyOwner {
+	    //Check the address is valid
+	    require(_clientVUPAddress != address(0x0));
+		require(_value >0);
+		require(advisoryTeamShare>= _value);
+	   
+	  	uint256 amountOfVUP = _value;
+	  	//Reduce from advisoryTeamShare
+	    advisoryTeamShare=advisoryTeamShare.sub(amountOfVUP);
+        //Accrue VUP tokens
+		totalVUP=totalVUP.add(amountOfVUP);
+		//Assign tokens to the client
+		uint256 balanceSafe = balances[_clientVUPAddress].add(amountOfVUP);
+		balances[_clientVUPAddress] = balanceSafe;
+		//Create VUP Created event
+		CreatedVUP(_clientVUPAddress, amountOfVUP);
 	
-    function accountBalance(address _address) constant returns (uint256 balance) {
-		return balances[_address];
 	}
-	function endICO() onlyOwner {
+    
+	function endICO() public onlyOwner{
 		// Do not end an already ended sale
 		require(!saleHasEnded);
 		// Can't end a sale that hasn't hit its minimum cap
@@ -390,8 +411,7 @@ contract VuePayToken is StandardToken, Ownable {
 		saleHasEnded = true;
 
 		// Calculate and create all team share VUPs
-		
-	    uint256 advisoryTeamShare = ADVISORY_TEAM_PORTION;
+	
 	    coreTeamShare = CORE_TEAM_PORTION;
 	    uint256 devTeamShare = DEV_TEAM_PORTION;
 	    cofounderShare = CO_FOUNDER_PORTION;
@@ -414,7 +434,7 @@ contract VuePayToken is StandardToken, Ownable {
 		CreatedVUP(udfVUPDestination, udfShare);
 
 	}
-	function unlock() onlyOwner{
+	function unlock() public onlyOwner{
 	   require(saleHasEnded);
        require(now > coreTeamUnlockedAt || now > unsoldUnlockedAt);
        if (now > coreTeamUnlockedAt) {
@@ -433,7 +453,7 @@ contract VuePayToken is StandardToken, Ownable {
     }
 
 	// Allows VuePay to withdraw funds
-	function withdrawFunds() onlyOwner {
+	function withdrawFunds() public onlyOwner {
 		// Disallow withdraw if the minimum hasn't been reached
 		require(minCapReached);
 		require(this.balance > 0);
@@ -443,12 +463,12 @@ contract VuePayToken is StandardToken, Ownable {
 	}
 
 	// Signals that the sale has reached its minimum funding goal
-	function triggerMinCap() onlyOwner {
+	function triggerMinCap() public onlyOwner {
 		minCapReached = true;
 	}
 
 	// Opens refunding.
-	function triggerRefund() onlyOwner{
+	function triggerRefund() public onlyOwner{
 		// No refunds if the sale was successful
 		require(!saleHasEnded);
 		// No refunds if minimum cap is hit
@@ -473,47 +493,43 @@ contract VuePayToken is StandardToken, Ownable {
 		msg.sender.transfer(etherAmount);
 	}
 
-	function changeVuePayETHDestinationAddress(address _newAddress) onlyOwner {
+	function changeVuePayETHDestinationAddress(address _newAddress) public onlyOwner {
 		vuePayETHDestination = _newAddress;
 	}
 	
-	function changeDevVUPDestinationAddress(address _newAddress) onlyOwner {
+	function changeDevVUPDestinationAddress(address _newAddress) public onlyOwner {
 		devVUPDestination = _newAddress;
 	}
 	
-	function changeCoreVUPDestinationAddress(address _newAddress) onlyOwner {
+	function changeCoreVUPDestinationAddress(address _newAddress) public onlyOwner {
 		coreVUPDestination = _newAddress;
 	}
 	
-	function changeAdvisoryVUPDestinationAddress(address _newAddress) onlyOwner{
+	function changeAdvisoryVUPDestinationAddress(address _newAddress) public onlyOwner{
 		advisoryVUPDestination = _newAddress;
 	}
-	function changeCofounderVUPDestinationAddress(address _newAddress) onlyOwner {
+	function changeCofounderVUPDestinationAddress(address _newAddress) public onlyOwner {
 		cofounderVUPDestination = _newAddress;
 	}
-	function changeUdfVUPDestinationAddress(address _newAddress) onlyOwner {
+	function changeUdfVUPDestinationAddress(address _newAddress) public onlyOwner {
 		udfVUPDestination = _newAddress;
 	}
-	function changeUnsoldVUPDestinationAddress(address _newAddress) onlyOwner {
+	function changeUnsoldVUPDestinationAddress(address _newAddress) public onlyOwner {
 		unsoldVUPDestination = _newAddress;
 	}
 	
-	function transfer(address _to, uint _value) returns (bool) {
+	function transfer(address _to, uint _value) public returns (bool) {
 		// Cannot transfer unless the minimum cap is hit
 		require(minCapReached);
-		// Check if the sender has enough
-		require(accountBalance(_to) >= _value);
 		return super.transfer(_to, _value);
 	}
 	
-	function transferFrom(address _from, address _to, uint _value) returns (bool) {
+	function transferFrom(address _from, address _to, uint _value) public returns (bool) {
 		// Cannot transfer unless the minimum cap is hit
 		require(minCapReached);
-		// Check if the sender has enough
-		require(accountBalance(_from) >= _value);
 		return super.transferFrom(_from, _to, _value);
 	}
-	function kill() onlyOwner {
+	function kill() private onlyOwner {
 		require(saleHasEnded);
 		if(this.balance > 0) {
 			vuePayETHDestination.transfer(this.balance);
