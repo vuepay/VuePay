@@ -1,11 +1,11 @@
-pragma solidity^0.4.16;
+pragma solidity^0.4.17;
 
 /**
  * @title Ownable
  * @dev The Ownable contract has an owner address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
-contract Ownable {
+contract Ownable{
   address public owner;
 
 
@@ -39,31 +39,30 @@ contract Ownable {
 
 }
 
-
 /**
  * @title SafeMath
  * @dev Math operations with safety checks that throw on error
  */
 library SafeMath {
-  function mul(uint256 a, uint256 b) internal returns (uint256) {
+  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
     uint256 c = a * b;
     assert(a == 0 || c / a == b);
     return c;
   }
 
-  function div(uint256 a, uint256 b) internal returns (uint256) {
+  function div(uint256 a, uint256 b) internal pure returns (uint256) {
     // assert(b > 0); // Solidity automatically throws when dividing by 0
     uint256 c = a / b;
     // assert(a == b * c + a % b); // There is no case in which this doesn't hold
     return c;
   }
 
-  function sub(uint256 a, uint256 b) internal returns (uint256) {
+  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
     assert(b <= a);
     return a - b;
   }
 
-  function add(uint256 a, uint256 b) internal returns (uint256) {
+  function add(uint256 a, uint256 b) internal pure returns (uint256) {
     uint256 c = a + b;
     assert(c >= a);
     return c;
@@ -189,7 +188,7 @@ contract StandardToken is ERC20, BasicToken {
 
 }
 
-contract VuePayToken is StandardToken, Ownable {
+contract VuePayTokenSale is StandardToken, Ownable {
 	using SafeMath for uint256;
 	// Events
 	event CreatedVUP(address indexed _creator, uint256 _amountOfVUP);
@@ -203,14 +202,21 @@ contract VuePayToken is StandardToken, Ownable {
 	
 	// Addresses and contracts
 	address public executor;
-	address public vuePayETHDestination;
-	
-	address public devVUPDestination;
-	address public coreVUPDestination;
-	address public advisoryVUPDestination;
-	address public udfVUPDestination;
-	address public cofounderVUPDestination;
-	address public unsoldVUPDestination;
+	//Vuepay Multisig Wallet
+	address public vuePayETHDestination=0x8B8698DEe100FC5F561848D0E57E94502Bd9318b;
+	//Vuepay Development activities Wallet
+	address public constant devVUPDestination=0x31403fA55aEa2065bBDd2778bFEd966014ab0081;
+	//VuePay Core Team reserve Wallet
+	address public constant coreVUPDestination=0x22d310194b5ac5086bDacb2b0f36D8f0a5971b23;
+	//VuePay Advisory and Promotions (PR/Marketing/Media etcc.) wallet
+	address public constant advisoryVUPDestination=0x991ABE74a1AC3d903dA479Ca9fede3d0954d430B;
+	//VuePay User DEvelopment Fund Wallet
+	address public constant udfVUPDestination=0xf4307C073451b80A0BaD1E099fD2B7f0fe38b7e9;
+	//Vuepay Cofounder Wallet
+	address public constant cofounderVUPDestination=0x863B2217E80e6C6192f63D3716c0cC7711Fad5b4;
+	//VuePay Unsold Tokens wallet
+	address public constant unsoldVUPDestination=0x5076084a3377ecDF8AD5cD0f26A21bA848DdF435;
+	//Total VuePay Sold
 	uint256 public totalVUP;
 	
 	// Sale data
@@ -223,6 +229,7 @@ contract VuePayToken is StandardToken, Ownable {
 	uint256 public preSaleStartBlock;
 	uint256 public preSaleEndBlock;
 	uint256 public icoEndBlock;
+	
     uint public constant coldStorageYears = 10 years;
     uint public coreTeamUnlockedAt;
     uint public unsoldUnlockedAt;
@@ -244,10 +251,6 @@ contract VuePayToken is StandardToken, Ownable {
 	uint256 public constant DEV_TEAM_PORTION =50000000e18;  // Total dev team share In percentage
 	uint256 public constant CO_FOUNDER_PORTION = 350000000e18;  // Total cofounder share In percentage
 	uint256 public constant UDF_PORTION =100000000e18;  // Total user deve fund share In percentage
-	//uint256 public constant MIN_PRE_SALE_ETH_DEPOSIT =20 ether;  // Minimum ETH deposit in Pre Sale
-	uint256 public constant SECURITY_ETHER_CAP = 1000000 ether; //ether
-	//uint256 public constant TOTAL_ALLOCATION_EXCLUDING_ICO = 60; //Total excluding to be sold in pre sale amd ico
-	
 	
 	uint256 public constant VUP_PER_ETH_BASE_RATE = 2000;  // 2000 VUP = 1 ETH during normal part of token sale
 	uint256 public constant VUP_PER_ETH_PRE_SALE_RATE = 3000; // 3000 VUP @ 50%  discount in pre sale
@@ -255,58 +258,28 @@ contract VuePayToken is StandardToken, Ownable {
 	uint256 public constant VUP_PER_ETH_ICO_TIER2_RATE = 2500; // 2500 VUP @ 25% discount
 	uint256 public constant VUP_PER_ETH_ICO_TIER3_RATE = 2250;// 2250 VUP @ 12.5% discount
 	
-	function VuePayToken (
-	    uint256 _preSaleStartBlock,
-		address _vuePayETHDestination,
-		address _devVUPDestination,
-		address _coreVUPDestination,
-		address _advisoryVUPDestination,
-		address _cofounderVUPDestination,
-		address _udfVUPDestination,
-		address _unsoldVUPDestination
-    ) public
+	
+	function VuePayTokenSale () public payable
 	{
-	   
+
 	    totalSupply = INITIAL_VUP_TOKEN_SUPPLY;
-	   
-		//preSaleEndBlock=_preSaleEndBlock;
-		preSaleStartBlock=_preSaleStartBlock;
-		preSaleEndBlock = block.number + 48384;  // Equivalent to 14 days later, assuming 25 second blocks
-		icoEndBlock = preSaleEndBlock + 103680;  // Equivalent to 30 days , assuming 25 second blocks
 
-	    // Reject on invalid ETH destination address or VUP destination address
-
-		require(_vuePayETHDestination != address(0x0));
-		require(_devVUPDestination != address(0x0));
-		require(_coreVUPDestination != address(0x0));
-		require(_cofounderVUPDestination != address(0x0));
-		require(_advisoryVUPDestination != address(0x0));
-	    require(_udfVUPDestination != address(0x0));
-		require(_unsoldVUPDestination != address(0x0));
-		
-		require(block.number > preSaleStartBlock);
-		// Reject if sale ends before the current block
-		require(preSaleEndBlock >= block.number);
-		// Reject if the sale end time is less than the sale start time
-		require(icoEndBlock >= block.number);
+		//Start Pre-sale approx on the 6th october 8:00 GMT
+	    preSaleStartBlock=4340582;
+	    //preSaleStartBlock=block.number;
+	    preSaleEndBlock = preSaleStartBlock + 37800;  // Equivalent to 14 days later, assuming 32 second blocks
+	    icoEndBlock = preSaleEndBlock + 81000;  // Equivalent to 30 days , assuming 32 second blocks
 		executor = msg.sender;
 		saleHasEnded = false;
 		minCapReached = false;
 		allowRefund = false;
-		vuePayETHDestination=_vuePayETHDestination;
-		devVUPDestination = _devVUPDestination;
-		coreVUPDestination = _coreVUPDestination;
-		advisoryVUPDestination = _advisoryVUPDestination;
-		cofounderVUPDestination = _cofounderVUPDestination;
-		udfVUPDestination = _udfVUPDestination;
-		unsoldVUPDestination=_unsoldVUPDestination;
 		advisoryTeamShare = ADVISORY_TEAM_PORTION;
 		totalETHRaised = 0;
 		totalVUP=0;
 
 	}
 
-	function () public payable {
+	function () payable public {
 		
 		//minimum .05 Ether required.
 		require(msg.value >= .05 ether);
@@ -316,8 +289,6 @@ contract VuePayToken is StandardToken, Ownable {
 		require(block.number >= preSaleStartBlock);
 		//Requires block.number to be less than icoEndBlock number
 		require(block.number < icoEndBlock);
-		//if security ETH capped reached terminate
-		require(newEtherBalance < SECURITY_ETHER_CAP);
 		//Has the Pre-Sale ended, after 14 days, Pre-Sale ends.
 		if (block.number > preSaleEndBlock){
 		    preSaleEnded=true;
@@ -325,8 +296,6 @@ contract VuePayToken is StandardToken, Ownable {
 		// Do not do anything if the amount of ether sent is 0
 		require(msg.value!=0);
 
-		//if (totalSupply.mul(TOTAL_ALLOCATION_EXCLUDING_ICO).div(100) <= PRESALE_ICO_PORTION) throw;
-			// Check if the balance is greater than the security cap
 		uint256 newEtherBalance = totalETHRaised.add(msg.value);
 		//Get the appropriate rate which applies
 		getCurrentVUPRate();
@@ -354,7 +323,7 @@ contract VuePayToken is StandardToken, Ownable {
 		CreatedVUP(msg.sender, amountOfVUP);
 	}
 	
-	function getCurrentVUPRate() private{
+	function getCurrentVUPRate() internal {
 	        //default to the base rate
 	        curTokenRate = VUP_PER_ETH_BASE_RATE;
 
@@ -492,30 +461,9 @@ contract VuePayToken is StandardToken, Ownable {
 		VUPRefundedForWei(msg.sender, etherAmount);
 		msg.sender.transfer(etherAmount);
 	}
-
+    //Allow changing the Vuepay MultiSig wallet incase of emergency
 	function changeVuePayETHDestinationAddress(address _newAddress) public onlyOwner {
 		vuePayETHDestination = _newAddress;
-	}
-	
-	function changeDevVUPDestinationAddress(address _newAddress) public onlyOwner {
-		devVUPDestination = _newAddress;
-	}
-	
-	function changeCoreVUPDestinationAddress(address _newAddress) public onlyOwner {
-		coreVUPDestination = _newAddress;
-	}
-	
-	function changeAdvisoryVUPDestinationAddress(address _newAddress) public onlyOwner{
-		advisoryVUPDestination = _newAddress;
-	}
-	function changeCofounderVUPDestinationAddress(address _newAddress) public onlyOwner {
-		cofounderVUPDestination = _newAddress;
-	}
-	function changeUdfVUPDestinationAddress(address _newAddress) public onlyOwner {
-		udfVUPDestination = _newAddress;
-	}
-	function changeUnsoldVUPDestinationAddress(address _newAddress) public onlyOwner {
-		unsoldVUPDestination = _newAddress;
 	}
 	
 	function transfer(address _to, uint _value) public returns (bool) {
@@ -529,12 +477,6 @@ contract VuePayToken is StandardToken, Ownable {
 		require(minCapReached);
 		return super.transferFrom(_from, _to, _value);
 	}
-	function kill() private onlyOwner {
-		require(saleHasEnded);
-		if(this.balance > 0) {
-			vuePayETHDestination.transfer(this.balance);
-		}
-		selfdestruct(executor);
-	}
+
 	
 }
